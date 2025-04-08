@@ -35,7 +35,7 @@ class Predictor(BasePredictor):
             "openai/clip-vit-base-patch32"
         )
 
-     def load_image(self, path):
+    def load_image(self, path):
         return Image.open(str(path)).convert("RGB")
 
     @torch.inference_mode()
