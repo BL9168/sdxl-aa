@@ -4,15 +4,19 @@ build:
   python_version: "3.10"
   system_packages:
     - "libgl1-mesa-glx"
-  python_packages:
-    - "diffusers==0.25.0"
-    - "transformers==4.35.0"
-    - "torch==2.0.1"
-    - "torchvision==0.15.2"
-    - "accelerate"
-    - "safetensors"
-    - "pillow"
-    - "numpy"
+ python_packages:
+  - numpy
+  - pytest
+  - replicate
+  - requests
+  - Pillow
+  - diffusers==0.25.0
+  - transformers==4.35.0
+  - torch==2.0.1
+  - torchvision==0.15.2
+  - accelerate
+  - safetensors
+
 
 predict: "predict.py:Predictor"
 
