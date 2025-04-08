@@ -31,7 +31,7 @@ from safetensors.torch import load_file
 from transformers import CLIPImageProcessor
 
 from dataset_and_utils import TokenEmbeddingsHandler
-
+MODEL_ID = "Lykon/AAM_XL_AnimeMix"
 SDXL_MODEL_CACHE = "./sdxl-cache"
 REFINER_MODEL_CACHE = "./refiner-cache"
 SAFETY_CACHE = "./safety-cache"
