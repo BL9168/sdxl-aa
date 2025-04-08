@@ -6,6 +6,7 @@ from typing import List, Optional
 import os
 import numpy as np
 from transformers import CLIPImageProcessor
+from PIL import Image
 
 class Predictor(BasePredictor):
     def setup(self):
