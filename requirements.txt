@@ -3,8 +3,4 @@ pytest
 replicate
 requests
 Pillow
-diffusers
-transformers
-torch
-accelerate
-safetensors
+
