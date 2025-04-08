@@ -2,21 +2,16 @@ build:
   gpu: true
   cuda: "11.8"
   python_version: "3.10"
-  system_packages:
-    - "libgl1-mesa-glx"
- python_packages:
-  - numpy
-  - pytest
-  - replicate
-  - requests
-  - Pillow
-  - diffusers==0.25.0
-  - transformers==4.35.0
-  - torch==2.0.1
-  - torchvision==0.15.2
-  - accelerate
-  - safetensors
-
+  python_packages:
+    - diffusers==0.25.0
+    - transformers==4.35.0
+    - torch==2.0.1
+    - torchvision==0.15.2
+    - accelerate
+    - safetensors
+    - numpy
+    - pillow
+    - requests
+    - replicate
 
 predict: "predict.py:Predictor"
-
