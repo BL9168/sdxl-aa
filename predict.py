@@ -35,8 +35,7 @@ class Predictor(BasePredictor):
         )
 
      def load_image(self, path):
-        shutil.copyfile(path, "/tmp/image.png")
-        return load_image("/tmp/image.png").convert("RGB")
+        return Image.open(str(path)).convert("RGB")
 
     @torch.inference_mode()
     def predict(
