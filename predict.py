@@ -1,53 +1,55 @@
-from cog import BasePredictor, Input, Path
 import torch
-from diffusers import DiffusionPipeline, StableDiffusionXLImg2ImgPipeline
-from diffusers.utils import load_image
+from cog import BasePredictor, Input, Path
 from typing import List, Optional
-import os
-import numpy as np
-from transformers import CLIPImageProcessor
+from diffusers import (
+    StableDiffusionXLPipeline,
+    StableDiffusionXLImg2ImgPipeline,
+    DDIMScheduler,
+    DPMSolverMultistepScheduler,
+    HeunDiscreteScheduler,
+    EulerAncestralDiscreteScheduler,
+    EulerDiscreteScheduler,
+    PNDMScheduler,
+)
 from PIL import Image
+
+SCHEDULERS = {
+    "DDIM": DDIMScheduler,
+    "DPMSolverMultistep": DPMSolverMultistepScheduler,
+    "HeunDiscrete": HeunDiscreteScheduler,
+    "K_EULER_ANCESTRAL": EulerAncestralDiscreteScheduler,
+    "K_EULER": EulerDiscreteScheduler,
+    "PNDM": PNDMScheduler,
+}
 
 class Predictor(BasePredictor):
     def setup(self):
-        print("Loading AAM XL AnimeMix model...")
-        self.pipe = DiffusionPipeline.from_pretrained(
-            "Lykon/AAM_XL_AnimeMix",
+        self.pipe = StableDiffusionXLPipeline.from_pretrained(
+            "stabilityai/stable-diffusion-xl-base-1.0",
             torch_dtype=torch.float16,
-            use_safetensors=True,
-            variant="fp16"
-        )
-        self.pipe.to("cuda")
+        ).to("cuda")
 
-        print("Setting up img2img pipeline...")
-        self.img2img_pipe = StableDiffusionXLImg2ImgPipeline(
-            vae=self.pipe.vae,
-            text_encoder=self.pipe.text_encoder,
-            text_encoder_2=self.pipe.text_encoder_2,
-            tokenizer=self.pipe.tokenizer,
-            tokenizer_2=self.pipe.tokenizer_2,
-            unet=self.pipe.unet,
-            scheduler=self.pipe.scheduler,
-        )
-        self.img2img_pipe.to("cuda")
+        self.img2img_pipe = StableDiffusionXLImg2ImgPipeline.from_pretrained(
+            "stabilityai/stable-diffusion-xl-base-1.0",
+            torch_dtype=torch.float16,
+        ).to("cuda")
 
-        self.feature_extractor = CLIPImageProcessor.from_pretrained(
-            "openai/clip-vit-base-patch32"
-        )
-
-    def load_image(self, path):
-        return Image.open(str(path)).convert("RGB")
+    def load_image(self, image_path: Path) -> Image.Image:
+        image = Image.open(image_path).convert("RGB")
+        return image
 
     @torch.inference_mode()
     def predict(
         self,
-        prompt: str = Input(description="Prompt for image generation"),
-        image: Optional[Path] = Input(description="Image for img2img mode", default=None),
+        prompt: str = Input(description="Prompt to guide the image generation"),
+        negative_prompt: Optional[str] = Input(description="Negative prompt to avoid certain features", default=None),
+        image: Optional[Path] = Input(description="Optional image for img2img mode", default=None),
         width: int = Input(description="Width of output image", default=1024),
         height: int = Input(description="Height of output image", default=1024),
-        prompt_strength: float = Input(description="Prompt strength for img2img", ge=0.0, le=1.0, default=0.7),
-        guidance_scale: float = Input(description="CFG scale", ge=1, le=20, default=6.0),
-        num_inference_steps: int = Input(description="Steps", ge=10, le=50, default=30),
+        prompt_strength: float = Input(description="Strength of prompt for img2img", default=0.7),
+        guidance_scale: float = Input(description="How strongly the prompt is followed", default=6.0),
+        num_inference_steps: int = Input(description="Number of denoising steps", default=20),
+        scheduler_name: str = Input(description="Scheduler to use", default="K_EULER_ANCESTRAL", choices=list(SCHEDULERS.keys())),
         seed: Optional[int] = Input(description="Seed for reproducibility", default=None),
     ) -> List[Path]:
 
@@ -55,9 +57,15 @@ class Predictor(BasePredictor):
         if seed is not None:
             generator.manual_seed(seed)
 
-        pipe = self.pipe
+        pipe = self.img2img_pipe if image else self.pipe
+
+        # 切換 Scheduler
+        scheduler_cls = SCHEDULERS[scheduler_name]
+        pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
+
         extra_args = {
             "prompt": prompt,
+            "negative_prompt": negative_prompt,
             "guidance_scale": guidance_scale,
             "generator": generator,
             "num_inference_steps": num_inference_steps,
@@ -65,19 +73,18 @@ class Predictor(BasePredictor):
 
         if image:
             input_image = self.load_image(image)
-            pipe = self.img2img_pipe
             extra_args["image"] = input_image
             extra_args["strength"] = prompt_strength
         else:
             extra_args["width"] = width
             extra_args["height"] = height
 
-        output = pipe(**extra_args)
+        output = pipe(**extra_args).images
 
         output_paths = []
-        for i, image in enumerate(output.images):
-            output_path = f"/tmp/out-{i}.png"
-            image.save(output_path)
-            output_paths.append(Path(output_path))
+        for i, img in enumerate(output):
+            out_path = f"/tmp/out-{i}.png"
+            img.save(out_path)
+            output_paths.append(Path(out_path))
 
         return output_paths
