@@ -1,7 +1,7 @@
 build:
   gpu: true
   cuda: "11.8"
-  python_version: "3.10"
+  python_version: "3.11"
   system_packages:
     - "libgl1-mesa-glx"
     - "ffmpeg"
@@ -10,7 +10,6 @@ build:
     - "wget"
   python_packages:
     - "diffusers==0.25.0"
-    - "torch==2.0.1"
     - "transformers==4.31.0"
     - "invisible-watermark==0.2.0"
     - "accelerate==0.21.0"
