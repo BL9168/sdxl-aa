@@ -24,15 +24,19 @@ SCHEDULERS = {
 
 class Predictor(BasePredictor):
     def setup(self):
-        self.pipe = StableDiffusionXLPipeline.from_pretrained(
-            "stabilityai/stable-diffusion-xl-base-1.0",
-            torch_dtype=torch.float16,
-        ).to("cuda")
+    self.pipe = StableDiffusionXLPipeline.from_pretrained(
+    "Lykon/AAM_XL_AnimeMix",
+    torch_dtype=torch.float16,
+    use_safetensors=True,
+    variant="fp16",
+).to("cuda")
 
-        self.img2img_pipe = StableDiffusionXLImg2ImgPipeline.from_pretrained(
-            "stabilityai/stable-diffusion-xl-base-1.0",
-            torch_dtype=torch.float16,
-        ).to("cuda")
+    self.img2img_pipe = StableDiffusionXLImg2ImgPipeline.from_pretrained(
+    "Lykon/AAM_XL_AnimeMix",
+    torch_dtype=torch.float16,
+    use_safetensors=True,
+    variant="fp16",
+).to("cuda")
 
     def load_image(self, image_path: Path) -> Image.Image:
         image = Image.open(image_path).convert("RGB")
